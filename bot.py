@@ -18,9 +18,8 @@ def new_code():
 def start(bot, update):
   print('received (%s): %s' % (update.message.from_user.first_name, update.message.text))
   update.message.reply_text('''Deze bot kan mastermind met je spelen.
-De speler moet in tien beurten de code raden. De code bestaat uit een combinatie van 4 unieke kleuren. Er zijn 6 mogelijke kleuren.
-De kleuren worden als de getallen 1 t/m 6 getoond. Het invoeren moet dus ook op basis van getallen.
-Na het invoeren van vier kleuren heeft u uw beurt voltooid. De computer geeft nu aan hoeveel kleuren er zowel correct gevonden als geplaatst waren, en hoeveel er enkel correct gevonden waren.
+De speler moet in tien beurten de code raden. De code bestaat uit een combinatie van 4 unieke kleuren harten. Er zijn 6 mogelijke kleuren.
+Na het invoeren van vier harten heeft u uw beurt voltooid. De computer geeft nu aan hoeveel harten er zowel correct gevonden als geplaatst waren, en hoeveel er enkel correct gevonden waren.
 Na tien beurten is het spel afgelopen.
 Success! %s
 Geef /begin om te beginnen.
