@@ -83,7 +83,7 @@ def check_round(bot, update, user_data):
       if goed == 4:
         reply_text = 'Gewonnen! %s' % emoji.emojize(':muscle:', use_aliases=True)
       else:
-        reply_text = 'Helaas, verloren. %s' % emoji.emojize(':sob:', use_aliases=True)
+        reply_text = 'Helaas, verloren. %s.\r\nDe code: %s.' % (emoji.emojize(':sob:', use_aliases=True), "".join(user_data['code']))
       update.message.reply_text(reply_text,
                                 reply_markup=ReplyKeyboardRemove())
       user_data['ronde'] = 1
