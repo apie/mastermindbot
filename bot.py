@@ -17,7 +17,7 @@ def new_code():
     return code[:4]  # return 4 items
 
 def start(bot, update):
-  print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
+  logmessage(bot, update)
   update.message.reply_text('''Deze bot kan mastermind met je spelen.
 De speler moet in tien beurten de code raden. De code bestaat uit een combinatie van 4 unieke kleuren harten. Er zijn 6 mogelijke kleuren.
 Na het invoeren van vier harten heeft u uw beurt voltooid. De computer geeft nu aan hoeveel harten er zowel correct gevonden als geplaatst waren, en hoeveel er enkel correct gevonden waren.
@@ -26,11 +26,11 @@ Success! %s
 Geef /begin om te beginnen.
 ''' % emoji.emojize(':thumbsup:', use_aliases=True))
 
-def logmessage(bot, update, job_queue, chat_data):
+def logmessage(bot, update):
   print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
 
 def begin(bot, update):
-    print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
+    logmessage(bot, update)
     reply_keyboard = [['Ok', 'Nee']]
 
     reply_text = 'Zal ik het spel starten%s\r\nGeef /stoppen om te annuleren.' % emoji.emojize(':question:', use_aliases=True)
@@ -42,7 +42,7 @@ def begin(bot, update):
 def check_round(bot, update, user_data):
     reply_keyboard = [code_options()[:3], code_options()[-3:]]
     reply_text = emoji.emojize(':green_apple:', use_aliases=True)
-    print('received (%s): %s' % (update.message.from_user.first_name, update.message.text))
+    logmessage(bot, update)
     if update.message.text == 'Nee':
       return cancel(bot, update)
     elif update.message.text == 'Ok':
@@ -59,7 +59,6 @@ def check_round(bot, update, user_data):
 
     guess = user_data['guess']
     code = user_data['code']
-    print(code)
     goed = 0
     goede_kleur = 0
     for idx, itm in enumerate(guess):
@@ -83,7 +82,7 @@ def check_round(bot, update, user_data):
       if goed == 4:
         reply_text = 'Gewonnen! %s' % emoji.emojize(':muscle:', use_aliases=True)
       else:
-        reply_text = 'Helaas, verloren. %s.\r\nDe code: %s.' % (emoji.emojize(':sob:', use_aliases=True), "".join(user_data['code']))
+        reply_text = 'Helaas, verloren. %s.\r\nDe code: %s.' % (emoji.emojize(':sob:', use_aliases=True), "".join(code))
       update.message.reply_text(reply_text,
                                 reply_markup=ReplyKeyboardRemove())
       user_data['ronde'] = 1
@@ -105,7 +104,7 @@ def cancel(bot, update):
     return ConversationHandler.END
 
 def error(bot, update, error):
-  print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
+  logmessage(bot, update)
   print('error: %s' % error)
  
 if __name__ == '__main__':
@@ -122,7 +121,7 @@ if __name__ == '__main__':
   )
   updater.dispatcher.add_handler(conv_handler)
 
-  updater.dispatcher.add_handler(MessageHandler(Filters.text, logmessage, pass_job_queue=True, pass_chat_data=True))
+  updater.dispatcher.add_handler(MessageHandler(Filters.text, logmessage))
 
   updater.dispatcher.add_error_handler(error)
 
