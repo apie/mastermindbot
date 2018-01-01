@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import emoji
+import datetime
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
 from random import shuffle
@@ -16,7 +17,7 @@ def new_code():
     return code[:4]  # return 4 items
 
 def start(bot, update):
-  print('received (%s): %s' % (update.message.from_user.first_name, update.message.text))
+  print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
   update.message.reply_text('''Deze bot kan mastermind met je spelen.
 De speler moet in tien beurten de code raden. De code bestaat uit een combinatie van 4 unieke kleuren harten. Er zijn 6 mogelijke kleuren.
 Na het invoeren van vier harten heeft u uw beurt voltooid. De computer geeft nu aan hoeveel harten er zowel correct gevonden als geplaatst waren, en hoeveel er enkel correct gevonden waren.
@@ -26,10 +27,10 @@ Geef /begin om te beginnen.
 ''' % emoji.emojize(':thumbsup:', use_aliases=True))
 
 def logmessage(bot, update, job_queue, chat_data):
-  print('received (%s): %s' % (update.message.from_user.first_name, update.message.text))
+  print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
 
 def begin(bot, update):
-    print('received (%s): %s' % (update.message.from_user.first_name, update.message.text))
+    print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
     reply_keyboard = [['Ok', 'Nee']]
 
     reply_text = 'Zal ik het spel starten%s\r\nGeef /stoppen om te annuleren.' % emoji.emojize(':question:', use_aliases=True)
@@ -104,7 +105,7 @@ def cancel(bot, update):
     return ConversationHandler.END
 
 def error(bot, update, error):
-  print('received: %s' % update.message.text)
+  print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
   print('error: %s' % error)
  
 if __name__ == '__main__':
