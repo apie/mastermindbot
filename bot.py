@@ -6,7 +6,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 from random import shuffle
 from settings import API_KEY
 
-BEURT = range(1)
+AANTAL_RONDES = 10
+BEURT, AFGELOPEN = range(2)
 
 def code_options():
     return [emoji.emojize(':red_heart:'), emoji.emojize(':yellow_heart:'), emoji.emojize(':green_heart:'), emoji.emojize(':blue_heart:'), emoji.emojize(':purple_heart:'), emoji.emojize(':black_heart:')]
@@ -29,30 +30,22 @@ Geef /begin om te beginnen.
 def logmessage(bot, update):
   print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
 
-def begin(bot, update):
+def first_round(bot, update, user_data):
+    reply_keyboard = [code_options()[:3], code_options()[-3:]]
+    reply_text = emoji.emojize(':green_apple:', use_aliases=True)
     logmessage(bot, update)
-    reply_keyboard = [['Ok', 'Nee']]
-
-    reply_text = 'Zal ik het spel starten%s\r\nGeef /stoppen om te annuleren.' % emoji.emojize(':question:', use_aliases=True)
-    update.message.reply_text(
-        reply_text,
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    user_data['code'] = new_code()
+    user_data['ronde'] = 1
+    user_data['guess'] = ''
+    reply_text += 'Ronde: %s' % user_data['ronde']
+    update.message.reply_text(reply_text, reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False))
     return BEURT
 
 def check_round(bot, update, user_data):
     reply_keyboard = [code_options()[:3], code_options()[-3:]]
     reply_text = emoji.emojize(':green_apple:', use_aliases=True)
     logmessage(bot, update)
-    if update.message.text == 'Nee':
-      return cancel(bot, update)
-    elif update.message.text == 'Ok':
-      user_data['code'] = new_code()
-      user_data['ronde'] = 1
-      user_data['guess'] = ''
-      reply_text += 'Ronde: %s' % user_data['ronde']
-      update.message.reply_text(reply_text, reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False))
-    else:
-      user_data['guess'] += update.message.text
+    user_data['guess'] += update.message.text
     if len(user_data['guess']) < 4:
       return BEURT
     user_data['ronde'] += 1
@@ -70,12 +63,13 @@ def check_round(bot, update, user_data):
     resultaten = 'Aantal goed: %s. Aantal goede kleur: %s. %s' % (goed, goede_kleur, emoji.emojize(':book:', use_aliases=True))
     print(resultaten)
 
-    reply_text += 'Ronde: %s' % user_data['ronde']
-    reply_text += '\r\n'+resultaten
+    reply_text += resultaten
+    if goed < 4:
+        reply_text += '\r\nRonde: %s' % user_data['ronde']
+        print('ronde: ',user_data['ronde'])
     update.message.reply_text(reply_text, reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False))
 
-    print('ronde: ',user_data['ronde'])
-    if user_data['ronde'] < 10 and goed < 4:
+    if user_data['ronde'] <= AANTAL_RONDES and goed < 4:
       user_data['guess'] = ''
       return BEURT
     else:
@@ -86,14 +80,31 @@ def check_round(bot, update, user_data):
       update.message.reply_text(reply_text,
                                 reply_markup=ReplyKeyboardRemove())
       user_data['ronde'] = 1
-      return end_game(bot, update, user_data)
+      #TODO show high scores
+      return vraag_nog_eens(bot, update)
+      #return end_game(bot, update, user_data)
+
+def vraag_nog_eens(bot, update):
+    logmessage(bot, update)
+    reply_keyboard = [['Ok', 'Nee']]
+
+    reply_text = 'Nog een potje%s' % emoji.emojize(':question:', use_aliases=True)
+    update.message.reply_text(
+        reply_text,
+        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    return AFGELOPEN
+
+def nog_eens(bot, update, user_data):
+    if update.message.text == 'Nee':
+        return cancel(bot, update)
+    elif update.message.text == 'Ok':
+        return first_round(bot, update, user_data)
 
 def end_game(bot, update, user_data):
     print('in end_game')
     update.message.reply_text('Dat was het!',
                               reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
-    #TODO show high scores
 
 def cancel(bot, update):
     print('in cancel')
@@ -113,11 +124,13 @@ if __name__ == '__main__':
 
   updater.dispatcher.add_handler(CommandHandler('start', start))
   conv_handler = ConversationHandler(
-      entry_points=[CommandHandler('begin', begin)],
+      entry_points=[CommandHandler('begin', first_round, pass_user_data=True)],
       states={
-          BEURT: [RegexHandler('^(Ok|Nee|%s)$' % hearts, check_round, pass_user_data=True)]
+          BEURT: [RegexHandler('^(%s)$' % hearts, check_round, pass_user_data=True)],
+          AFGELOPEN: [RegexHandler('^(Ok|Nee)$', nog_eens, pass_user_data=True)]
       },
-      fallbacks=[CommandHandler('stoppen', cancel)]
+      fallbacks=[CommandHandler('stoppen', cancel)],
+      allow_reentry=True
   )
   updater.dispatcher.add_handler(conv_handler)
 
