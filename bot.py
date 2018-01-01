@@ -64,7 +64,7 @@ def check_round(bot, update, user_data):
     print(resultaten)
 
     reply_text += resultaten
-    if goed < 4:
+    if user_data['ronde'] <= AANTAL_RONDES and goed < 4:
         reply_text += '\r\nRonde: %s' % user_data['ronde']
         print('ronde: ',user_data['ronde'])
     update.message.reply_text(reply_text, reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False))
