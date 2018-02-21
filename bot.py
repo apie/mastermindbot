@@ -5,9 +5,27 @@ from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
 from random import shuffle
 from settings import API_KEY
+import high_score
 
 AANTAL_RONDES = 10
 BEURT, AFGELOPEN = range(2)
+
+def set_high_score(user, rounds, duration=None):
+    #TODO duration
+    print('set_high_score')
+    high_score.set_high_score(user.first_name, user.id, rounds, duration)
+
+def show_high_scores(bot, update):
+    logmessage(bot, update)
+    print('show_high_scores')
+    high_scores = high_score.get_high_scores(update.message.from_user.id)
+    print('high_scores ontvangen')
+    reply_text = 'Uw top 5:\r\n%s' % "\r\n".join(['%s: %s' % (str(r['date']), r['score']) for r in high_scores['my_top'][:5]])
+    print(reply_text)
+    update.message.reply_text(reply_text)
+    reply_text = 'Algemene top 5:\r\n%s' % "\r\n".join(['%s: %s' % (str(r['user']), r['score']) for r in high_scores['global_top'][:5]])
+    print(reply_text)
+    update.message.reply_text(reply_text)
 
 def code_options():
     return [emoji.emojize(':red_heart:'), emoji.emojize(':yellow_heart:'), emoji.emojize(':green_heart:'), emoji.emojize(':blue_heart:'), emoji.emojize(':purple_heart:'), emoji.emojize(':black_heart:')]
@@ -19,11 +37,13 @@ def new_code():
 
 def start(bot, update):
   logmessage(bot, update)
-  update.message.reply_text('''Deze bot kan mastermind met je spelen.
+  update.message.reply_text('''Deze bot kan mastermind met u spelen.
 De speler moet in tien beurten de code raden. De code bestaat uit een combinatie van 4 unieke kleuren harten. Er zijn 6 mogelijke kleuren.
 Na het invoeren van vier harten heeft u uw beurt voltooid. De computer geeft nu aan hoeveel harten er zowel correct gevonden als geplaatst waren, en hoeveel er enkel correct gevonden waren.
 Na tien beurten is het spel afgelopen.
 Success! %s
+Wilt u het potje halverwege afbreken? Geef dan /stoppen.
+Geef /highscore om de records te zien.
 Geef /begin om te beginnen.
 ''' % emoji.emojize(':thumbsup:', use_aliases=True))
 
@@ -35,6 +55,7 @@ def first_round(bot, update, user_data):
     reply_text = emoji.emojize(':green_apple:', use_aliases=True)
     logmessage(bot, update)
     user_data['code'] = new_code()
+    print(emoji.demojize(" ".join(user_data['code'])))
     user_data['ronde'] = 1
     user_data['guess'] = ''
     reply_text += 'Ronde: %s' % user_data['ronde']
@@ -75,14 +96,15 @@ def check_round(bot, update, user_data):
     else:
       if goed == 4:
         reply_text = 'Gewonnen! %s' % emoji.emojize(':muscle:', use_aliases=True)
+        set_high_score(update.message.from_user,
+                       user_data['ronde']-1)
       else:
         reply_text = 'Helaas, verloren. %s.\r\nDe code: %s.' % (emoji.emojize(':sob:', use_aliases=True), "".join(code))
       update.message.reply_text(reply_text,
                                 reply_markup=ReplyKeyboardRemove())
       user_data['ronde'] = 1
-      #TODO show high scores
+      show_high_scores(bot, update)
       return vraag_nog_eens(bot, update)
-      #return end_game(bot, update, user_data)
 
 def vraag_nog_eens(bot, update):
     logmessage(bot, update)
@@ -123,6 +145,7 @@ if __name__ == '__main__':
   hearts = "|".join(code_options())
 
   updater.dispatcher.add_handler(CommandHandler('start', start))
+  updater.dispatcher.add_handler(CommandHandler('highscore', show_high_scores))
   conv_handler = ConversationHandler(
       entry_points=[CommandHandler('begin', first_round, pass_user_data=True)],
       states={
