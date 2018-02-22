@@ -7,8 +7,8 @@ from pydblite import Base
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 def sort_high_scores(elem):
-    #TODO evt ook nog duration en tijdstip meenemen.
-    return int(elem['score'])
+    #TODO evt ook nog duration meenemen.
+    return (int(elem['score']), elem['date'])
 
 def update_user_table(user_id, first_name):
     db = Base(os.path.join(SCRIPT_DIR, 'users.db'))
