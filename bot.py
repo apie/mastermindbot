@@ -10,8 +10,7 @@ import high_score
 AANTAL_RONDES = 10
 BEURT, AFGELOPEN = range(2)
 
-def set_high_score(user, rounds, duration=None):
-    #TODO duration
+def set_high_score(user, rounds, duration):
     print('set_high_score')
     high_score.set_high_score(user.first_name, user.id, rounds, duration)
 
@@ -56,6 +55,7 @@ def first_round(bot, update, user_data):
     logmessage(bot, update)
     user_data['code'] = new_code()
     print(emoji.demojize(" ".join(user_data['code'])))
+    user_data['started'] = datetime.datetime.now()
     user_data['ronde'] = 1
     user_data['guess'] = ''
     reply_text += 'Ronde: %s' % user_data['ronde']
@@ -97,7 +97,8 @@ def check_round(bot, update, user_data):
       if goed == 4:
         reply_text = 'Gewonnen! %s' % emoji.emojize(':muscle:', use_aliases=True)
         set_high_score(update.message.from_user,
-                       user_data['ronde']-1)
+                       user_data['ronde']-1,
+                       datetime.datetime.now()-user_data['started'])
       else:
         reply_text = 'Helaas, verloren. %s.\r\nDe code: %s.' % (emoji.emojize(':sob:', use_aliases=True), "".join(code))
       update.message.reply_text(reply_text,
