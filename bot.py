@@ -1,30 +1,30 @@
 #!/usr/bin/env python3
 import emoji
 import datetime
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler, CallbackQueryHandler
 from random import shuffle
 from settings import API_KEY
 import high_score
 
 AANTAL_RONDES = 10
-BEURT, AFGELOPEN = range(2)
 
 def set_high_score(user, rounds, duration):
     print('set_high_score')
     high_score.set_high_score(user.first_name, user.id, rounds, duration)
 
-def show_high_scores(bot, update):
-    logmessage(bot, update)
+def show_high_scores(bot, update, query, user=None):
     print('show_high_scores')
-    high_scores = high_score.get_high_scores(update.message.from_user.id)
+    if not user:
+      user = update.message.from_user
+    high_scores = high_score.get_high_scores(user.id)
     print('high_scores ontvangen')
     reply_text = 'Uw top 5:\r\n%s' % "\r\n".join(['%s: %s' % (str(r['date']), r['score']) for r in high_scores['my_top'][:5]])
     print(reply_text)
-    update.message.reply_text(reply_text)
+    query.message.reply_text(reply_text)
     reply_text = 'Algemene top 5:\r\n%s' % "\r\n".join(['%s: %s' % (str(r['user']), r['score']) for r in high_scores['global_top'][:5]])
     print(reply_text)
-    update.message.reply_text(reply_text)
+    query.message.reply_text(reply_text)
 
 def code_options():
     return [emoji.emojize(':red_heart:'), emoji.emojize(':yellow_heart:'), emoji.emojize(':green_heart:'), emoji.emojize(':blue_heart:'), emoji.emojize(':purple_heart:'), emoji.emojize(':black_heart:')]
@@ -46,33 +46,82 @@ Geef /highscore om de records te zien.
 Geef /begin om te beginnen.
 ''' % emoji.emojize(':thumbsup:', use_aliases=True))
 
+reply_keyboard = [[InlineKeyboardButton(o, callback_data=o) for o in code_options()[:3]],
+                  [InlineKeyboardButton(o, callback_data=o) for o in code_options()[-3:]],
+                  [InlineKeyboardButton('Stop', callback_data='stop')],
+                  ]
+reply_markup = InlineKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+
 def logmessage(bot, update):
   print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
 
-def first_round(bot, update, user_data):
-    reply_keyboard = [code_options()[:3], code_options()[-3:]]
+def start_round(bot, update, user_data, query=None):
+    print('start_round')
+    if user_data.get('user') is None:
+      user_data['user'] = update.message.from_user
+    if not user_data.get('code'):
+      user_data['code'] = new_code()
+      print('Code:')
+      print(emoji.demojize(" ".join(user_data['code'])))
+      user_data['started'] = datetime.datetime.now()
+      user_data['ronde'] = 1
+      user_data['guess'] = ''
+   
+    print('guess')
+    print(user_data['guess'])
+    questionmark = emoji.emojize(':question:', use_aliases=True)
     reply_text = emoji.emojize(':green_apple:', use_aliases=True)
-    logmessage(bot, update)
-    user_data['code'] = new_code()
-    print(emoji.demojize(" ".join(user_data['code'])))
-    user_data['started'] = datetime.datetime.now()
-    user_data['ronde'] = 1
-    user_data['guess'] = ''
-    reply_text += 'Ronde: %s' % user_data['ronde']
-    update.message.reply_text(reply_text, reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False))
-    return BEURT
+    reply_text += 'Ronde: {round}. Poging: {fill}'.format(round=user_data['ronde'], fill=4*questionmark)
+    if query:
+      query.message.reply_text(reply_text, reply_markup=reply_markup)
+    else:
+      update.message.reply_text(reply_text, reply_markup=reply_markup)
 
-def check_round(bot, update, user_data):
-    reply_keyboard = [code_options()[:3], code_options()[-3:]]
+def end_round(user_data):
+    del user_data['code']
+
+def check_for_another_game(bot, update, user_data, query):
+    bot.edit_message_reply_markup(reply_markup=[],
+      chat_id=query.message.chat_id,
+      message_id=query.message.message_id)
+    if query.data == 'Ja':
+      return start_round(bot, update, user_data, query)
+    query.message.reply_text('Tot ziens.')
+    return
+
+def make_guess(bot, update, user_data):
+    bot.answer_callback_query(update.callback_query.id)
+    print('make_guess')
+    query = update.callback_query
+    if query.data == 'stop':
+      bot.edit_message_reply_markup(reply_markup=[],
+        chat_id=query.message.chat_id,
+        message_id=query.message.message_id)
+      query.message.reply_text('Afgebroken.')
+      return end_round(user_data)
+    if 'Nog een potje' in query.message.text:
+      return check_for_another_game(bot, update, user_data, query)
+
+    user_data['guess'] += query.data
+    questionmark = emoji.emojize(':question:', use_aliases=True)
     reply_text = emoji.emojize(':green_apple:', use_aliases=True)
-    logmessage(bot, update)
-    user_data['guess'] += update.message.text
+    reply_text += 'Ronde: {round}. Poging: {attempt}{fill}'.format(round=user_data['ronde'], attempt=user_data['guess'], fill=(4-len(user_data['guess']))*questionmark)
+    bot.edit_message_text(text=reply_text,
+      chat_id=query.message.chat_id,
+      message_id=query.message.message_id,
+      reply_markup=reply_markup)
     if len(user_data['guess']) < 4:
-      return BEURT
-    user_data['ronde'] += 1
+      return
+    print('de opties binnen')
+    bot.edit_message_reply_markup(reply_markup=[],
+      chat_id=query.message.chat_id,
+      message_id=query.message.message_id)
 
+    #4 opties binnen
+    # Controleren
     guess = user_data['guess']
     code = user_data['code']
+    print(emoji.demojize(guess))
     goed = 0
     goede_kleur = 0
     for idx, itm in enumerate(guess):
@@ -83,59 +132,42 @@ def check_round(bot, update, user_data):
 
     resultaten = 'Aantal goed: %s. Aantal goede kleur: %s. %s' % (goed, goede_kleur, emoji.emojize(':book:', use_aliases=True))
     print(resultaten)
+    #resultaten bekend
+    reply_text = emoji.emojize(':green_apple:', use_aliases=True)
+    reply_text += 'Ronde: %s' % user_data['ronde']
+    reply_text += ' '+resultaten
+    query.message.reply_text(reply_text)
 
-    reply_text += resultaten
-    if user_data['ronde'] <= AANTAL_RONDES and goed < 4:
-        reply_text += '\r\nRonde: %s' % user_data['ronde']
-        print('ronde: ',user_data['ronde'])
-    update.message.reply_text(reply_text, reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False))
-
-    if user_data['ronde'] <= AANTAL_RONDES and goed < 4:
+    if user_data['ronde'] < AANTAL_RONDES and goed < 4:
+      #ronde afgelopen, niet gewonnen of verloren
+      print('beurt afgelopen')
       user_data['guess'] = ''
-      return BEURT
+      user_data['ronde'] += 1
+      start_round(bot, update, user_data, query)
     else:
+      print('spel afgelopen')
       if goed == 4:
+        print('gewonnen')
         reply_text = 'Gewonnen! %s' % emoji.emojize(':muscle:', use_aliases=True)
-        set_high_score(update.message.from_user,
-                       user_data['ronde']-1,
+        set_high_score(user_data['user'],
+                       user_data['ronde'],
                        datetime.datetime.now()-user_data['started'])
       else:
+        print('verloren')
         reply_text = 'Helaas, verloren. %s.\r\nDe code: %s.' % (emoji.emojize(':sob:', use_aliases=True), "".join(code))
-      update.message.reply_text(reply_text,
-                                reply_markup=ReplyKeyboardRemove())
-      user_data['ronde'] = 1
-      show_high_scores(bot, update)
-      return vraag_nog_eens(bot, update)
+      query.message.reply_text(reply_text)
+      show_high_scores(bot, update, query, user_data['user'])
+      end_round(user_data)
+      nog_eens(bot, update, query)
 
-def vraag_nog_eens(bot, update):
-    logmessage(bot, update)
-    reply_keyboard = [['Ok', 'Nee']]
+def nog_eens(bot, update, query):
+    reply_text = 'Nog een potje'
+    reply_text += emoji.emojize(':question:', use_aliases=True)
 
-    reply_text = 'Nog een potje%s' % emoji.emojize(':question:', use_aliases=True)
-    update.message.reply_text(
-        reply_text,
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
-    return AFGELOPEN
-
-def nog_eens(bot, update, user_data):
-    if update.message.text == 'Nee':
-        return cancel(bot, update)
-    elif update.message.text == 'Ok':
-        return first_round(bot, update, user_data)
-
-def end_game(bot, update, user_data):
-    print('in end_game')
-    update.message.reply_text('Dat was het!',
-                              reply_markup=ReplyKeyboardRemove())
-    return ConversationHandler.END
-
-def cancel(bot, update):
-    print('in cancel')
-    user = update.message.from_user
-    print("User %s canceled the conversation." % user.first_name)
-    update.message.reply_text('Tot ziens.',
-                              reply_markup=ReplyKeyboardRemove())
-    return ConversationHandler.END
+    reply_keyboard = [[InlineKeyboardButton(o, callback_data=o) for o in ('Ja', 'Nee')]]
+    reply_markup = InlineKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+    if query:
+      query.message.reply_text(reply_text, reply_markup=reply_markup)
 
 def error(bot, update, error):
   logmessage(bot, update)
@@ -143,25 +175,17 @@ def error(bot, update, error):
  
 if __name__ == '__main__':
   updater = Updater(API_KEY)
-  hearts = "|".join(code_options())
 
   updater.dispatcher.add_handler(CommandHandler('start', start))
   updater.dispatcher.add_handler(CommandHandler('highscore', show_high_scores))
-  conv_handler = ConversationHandler(
-      entry_points=[CommandHandler('begin', first_round, pass_user_data=True)],
-      states={
-          BEURT: [RegexHandler('^(%s)$' % hearts, check_round, pass_user_data=True)],
-          AFGELOPEN: [RegexHandler('^(Ok|Nee)$', nog_eens, pass_user_data=True)]
-      },
-      fallbacks=[CommandHandler('stoppen', cancel)],
-      allow_reentry=True
-  )
-  updater.dispatcher.add_handler(conv_handler)
+
+  updater.dispatcher.add_handler(CommandHandler('begin', start_round, pass_user_data=True))
+  updater.dispatcher.add_handler(CallbackQueryHandler(make_guess, pass_user_data=True))
 
   updater.dispatcher.add_handler(MessageHandler(Filters.text, logmessage))
-
   updater.dispatcher.add_error_handler(error)
 
+  print('bot gestart')
   updater.start_polling()
   updater.idle()
 
