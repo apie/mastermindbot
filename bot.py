@@ -7,6 +7,7 @@ from random import shuffle
 from settings import API_KEY
 import high_score
 
+DEFAULT_CODE_STYLE = 'hearts'
 AANTAL_RONDES = 10
 
 def set_high_score(user, rounds, duration):
@@ -27,10 +28,18 @@ def show_high_scores(bot, update, query, user=None):
     query.message.reply_text(reply_text)
 
 def code_options():
-    return [emoji.emojize(':red_heart:'), emoji.emojize(':yellow_heart:'), emoji.emojize(':green_heart:'), emoji.emojize(':blue_heart:'), emoji.emojize(':purple_heart:'), emoji.emojize(':black_heart:')]
+    return dict(
+      numbers=[str(n) for n in range(1,7)],
+      hearts=[emoji.emojize(':red_heart:'), emoji.emojize(':yellow_heart:'), emoji.emojize(':green_heart:'), emoji.emojize(':blue_heart:'), emoji.emojize(':purple_heart:'), emoji.emojize(':black_heart:')],
+      fruits=[emoji.emojize(':apple:', use_aliases=True), emoji.emojize(':lemon:'), emoji.emojize(':banana:'), emoji.emojize(':pineapple:'), emoji.emojize(':green_apple:'), emoji.emojize(':tangerine:')]
+    )
 
-def new_code():
-    code = code_options()
+def get_code_option(code_style):
+    return code_options().get(code_style, DEFAULT_CODE_STYLE)
+
+def new_code(code_style):
+    code = get_code_option(code_style)
+    assert len(code) == 6
     shuffle(code)
     return code[:4]  # return 4 items
 
@@ -43,24 +52,36 @@ Na tien beurten is het spel afgelopen.
 Success! %s
 Wilt u het potje halverwege afbreken? Geef dan /stoppen.
 Geef /highscore om de records te zien.
+Geef /code_style om de een ander type code in te stellen.
 Geef /begin om te beginnen.
 ''' % emoji.emojize(':thumbsup:', use_aliases=True))
 
-reply_keyboard = [[InlineKeyboardButton(o, callback_data=o) for o in code_options()[:3]],
-                  [InlineKeyboardButton(o, callback_data=o) for o in code_options()[-3:]],
-                  [InlineKeyboardButton('Stop', callback_data='stop')],
-                  ]
-reply_markup = InlineKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+def get_reply_markup(code_style):
+  reply_keyboard = [[InlineKeyboardButton(o, callback_data=o) for o in get_code_option(code_style)[:3]],
+                    [InlineKeyboardButton(o, callback_data=o) for o in get_code_option(code_style)[-3:]],
+                    [InlineKeyboardButton('Stop', callback_data='stop')],
+                    ]
+  reply_markup = InlineKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+  return reply_markup
 
 def logmessage(bot, update):
   print('[%s] received (%s): %s' % (datetime.datetime.now().ctime(), update.message.from_user.first_name, update.message.text))
+
+def set_code_style(bot, update, user_data):
+    code_opt = code_options()
+    reply_text = 'Kies een van de volgende stijlen:'
+    reply_keyboard = [
+      [InlineKeyboardButton(" ".join(code_opt[o]), callback_data=o) for o in sorted(code_opt.keys())]
+    ]
+    reply_markup = InlineKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+    update.message.reply_text(reply_text, reply_markup=reply_markup)
 
 def start_round(bot, update, user_data, query=None):
     print('start_round')
     if user_data.get('user') is None:
       user_data['user'] = update.message.from_user
     if not user_data.get('code'):
-      user_data['code'] = new_code()
+      user_data['code'] = new_code(user_data.get('code_style'))
       print('Code:')
       print(emoji.demojize(" ".join(user_data['code'])))
       user_data['started'] = datetime.datetime.now()
@@ -73,9 +94,9 @@ def start_round(bot, update, user_data, query=None):
     reply_text = emoji.emojize(':green_apple:', use_aliases=True)
     reply_text += 'Ronde: {round}. Poging: {fill}'.format(round=user_data['ronde'], fill=4*questionmark)
     if query:
-      query.message.reply_text(reply_text, reply_markup=reply_markup)
+      query.message.reply_text(reply_text, reply_markup=get_reply_markup(user_data.get('code_style')))
     else:
-      update.message.reply_text(reply_text, reply_markup=reply_markup)
+      update.message.reply_text(reply_text, reply_markup=get_reply_markup(user_data.get('code_style')))
 
 def end_round(user_data):
     del user_data['code']
@@ -99,8 +120,15 @@ def make_guess(bot, update, user_data):
         message_id=query.message.message_id)
       query.message.reply_text('Afgebroken.')
       return end_round(user_data)
-    if 'Nog een potje' in query.message.text:
+    elif 'Nog een potje' in query.message.text:
       return check_for_another_game(bot, update, user_data, query)
+    elif query.message.text == 'Kies een van de volgende stijlen:':
+      bot.edit_message_reply_markup(reply_markup=[],
+        chat_id=query.message.chat_id,
+        message_id=query.message.message_id)
+      query.message.reply_text('Opgeslagen.')
+      user_data['code_style'] = query.data
+      return
 
     user_data['guess'] += query.data
     questionmark = emoji.emojize(':question:', use_aliases=True)
@@ -109,7 +137,7 @@ def make_guess(bot, update, user_data):
     bot.edit_message_text(text=reply_text,
       chat_id=query.message.chat_id,
       message_id=query.message.message_id,
-      reply_markup=reply_markup)
+      reply_markup=get_reply_markup(user_data.get('code_style')))
     if len(user_data['guess']) < 4:
       return
     print('de opties binnen')
@@ -178,6 +206,7 @@ if __name__ == '__main__':
 
   updater.dispatcher.add_handler(CommandHandler('start', start))
   updater.dispatcher.add_handler(CommandHandler('highscore', show_high_scores))
+  updater.dispatcher.add_handler(CommandHandler('code_style', set_code_style, pass_user_data=True))
 
   updater.dispatcher.add_handler(CommandHandler('begin', start_round, pass_user_data=True))
   updater.dispatcher.add_handler(CallbackQueryHandler(make_guess, pass_user_data=True))
