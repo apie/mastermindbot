@@ -97,8 +97,7 @@ def start_round(bot, update, user_data, query=None):
     print('guess')
     print(user_data['guess'])
     questionmark = emoji.emojize(':question:', use_aliases=True)
-    reply_text = emoji.emojize(':green_apple:', use_aliases=True)
-    reply_text += 'Ronde: {round}. Poging: {fill}'.format(round=user_data['ronde'], fill=4*questionmark)
+    reply_text = '{fill}'.format(fill=4*questionmark)
     if query:
       query.message.reply_text(reply_text, reply_markup=get_reply_markup(user_data.get('code_style')))
     else:
@@ -138,8 +137,7 @@ def make_guess(bot, update, user_data):
 
     user_data['guess'] += query.data
     questionmark = emoji.emojize(':question:', use_aliases=True)
-    reply_text = emoji.emojize(':green_apple:', use_aliases=True)
-    reply_text += 'Ronde: {round}. Poging: {attempt}{fill}'.format(round=user_data['ronde'], attempt=user_data['guess'], fill=(4-len(user_data['guess']))*questionmark)
+    reply_text = '{attempt}{fill}'.format(attempt=user_data['guess'], fill=(4-len(user_data['guess']))*questionmark)
     bot.edit_message_text(text=reply_text,
       chat_id=query.message.chat_id,
       message_id=query.message.message_id,
@@ -164,11 +162,11 @@ def make_guess(bot, update, user_data):
       elif itm in code:
         goede_kleur += 1
 
-    resultaten = 'Aantal goed: %s. Aantal goede kleur: %s. %s' % (goed, goede_kleur, emoji.emojize(':book:', use_aliases=True))
+    resultaten = 'Goed: %s. Alleen kleur goed: %s. %s' % (goed, goede_kleur, emoji.emojize(':book:', use_aliases=True))
     print(resultaten)
     #resultaten bekend
     reply_text = emoji.emojize(':green_apple:', use_aliases=True)
-    reply_text += 'Ronde: %s' % user_data['ronde']
+    reply_text += 'Ronde %s:' % user_data['ronde']
     reply_text += ' '+resultaten
     query.message.reply_text(reply_text)
 
