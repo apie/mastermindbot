@@ -7,8 +7,7 @@ from pydblite import Base
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 def sort_high_scores(elem):
-    #TODO evt ook nog duration meenemen.
-    return (int(elem['score']), elem['date'])
+    return (int(elem['score']), elem['duration'], elem['date'])
 
 def update_user_table(user_id, first_name):
     db = Base(os.path.join(SCRIPT_DIR, 'users.db'))
@@ -48,12 +47,14 @@ def get_high_scores(user_id):
     for r in sorted([r for r in db if r['user_id'] == user_id ], key=sort_high_scores):
         my_top.append({
             'date': r['date'].strftime('%d-%m-%Y'),
+            'duration': str(r['duration']).split('.')[0],
             'score': r['score'],
         })
     global_top = []
     for r in sorted([ r for r in db ], key=sort_high_scores):
         global_top.append({
             'user': get_user_name(r['user_id']),
+            'duration': str(r['duration']).split('.')[0],
             'score': r['score'],
         })
     return {

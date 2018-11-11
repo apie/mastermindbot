@@ -20,13 +20,13 @@ def show_high_scores(bot, update, query=None, user=None):
       user = update.message.from_user
     high_scores = high_score.get_high_scores(user.id)
     print('high_scores ontvangen')
-    reply_text = 'Uw top 5:\r\n%s' % "\r\n".join(['%s: %s' % (str(r['date']), r['score']) for r in high_scores['my_top'][:5]])
+    reply_text = 'Uw top 5:\r\n%s' % "\r\n".join(['{score}: {duration} ({date})'.format(duration=r['duration'], date=str(r['date']), score=r['score']) for r in high_scores['my_top'][:5]])
     print(reply_text)
     if query:
       query.message.reply_text(reply_text)
     else:
       update.message.reply_text(reply_text)
-    reply_text = 'Algemene top 5:\r\n%s' % "\r\n".join(['%s: %s' % (str(r['user']), r['score']) for r in high_scores['global_top'][:5]])
+    reply_text = 'Algemene top 5:\r\n%s' % "\r\n".join(['{user}: {score} ({duration})'.format(user=str(r['user']), score=r['score'], duration=r['duration']) for r in high_scores['global_top'][:5]])
     print(reply_text)
     if query:
       query.message.reply_text(reply_text)
