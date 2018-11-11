@@ -86,7 +86,7 @@ def start_round(bot, update, user_data, query=None):
     print('start_round')
     if user_data.get('user') is None:
       user_data['user'] = update.message.from_user
-    if not user_data.get('code'):
+    if not query:
       user_data['code'] = new_code(user_data.get('code_style'))
       print('Code:')
       print(emoji.demojize(" ".join(user_data['code'])))
