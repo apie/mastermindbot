@@ -41,7 +41,7 @@ def code_options():
     )
 
 def get_code_option(code_style):
-    return code_options().get(code_style, DEFAULT_CODE_STYLE)
+    return code_options().get(code_style or DEFAULT_CODE_STYLE)
 
 def new_code(code_style):
     code = get_code_option(code_style)
