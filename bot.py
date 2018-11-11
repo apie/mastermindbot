@@ -14,7 +14,7 @@ def set_high_score(user, rounds, duration):
     print('set_high_score')
     high_score.set_high_score(user.first_name, user.id, rounds, duration)
 
-def show_high_scores(bot, update, query, user=None):
+def show_high_scores(bot, update, query=None, user=None):
     print('show_high_scores')
     if not user:
       user = update.message.from_user
@@ -22,10 +22,16 @@ def show_high_scores(bot, update, query, user=None):
     print('high_scores ontvangen')
     reply_text = 'Uw top 5:\r\n%s' % "\r\n".join(['%s: %s' % (str(r['date']), r['score']) for r in high_scores['my_top'][:5]])
     print(reply_text)
-    query.message.reply_text(reply_text)
+    if query:
+      query.message.reply_text(reply_text)
+    else:
+      update.message.reply_text(reply_text)
     reply_text = 'Algemene top 5:\r\n%s' % "\r\n".join(['%s: %s' % (str(r['user']), r['score']) for r in high_scores['global_top'][:5]])
     print(reply_text)
-    query.message.reply_text(reply_text)
+    if query:
+      query.message.reply_text(reply_text)
+    else:
+      update.message.reply_text(reply_text)
 
 def code_options():
     return dict(
