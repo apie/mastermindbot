@@ -134,6 +134,9 @@ def make_guess(bot, update, user_data):
       query.message.reply_text('Opgeslagen.')
       user_data['code_style'] = query.data
       return
+    elif query.data in user_data['guess']:
+      # Guessed one color multiple times
+      return
 
     user_data['guess'] += query.data
     questionmark = emoji.emojize(':question:', use_aliases=True)
