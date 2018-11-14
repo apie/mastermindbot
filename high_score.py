@@ -62,3 +62,17 @@ def get_high_scores(user_id):
 	'global_top': global_top,
     }
 
+def print_high_scores():
+    db = Base(os.path.join(SCRIPT_DIR, 'high_scores.db'))
+    db.create('user_id', 'score', 'duration', 'date', mode="open")
+    for r in sorted([ r for r in db ], key=sort_high_scores):
+      print('{user} {score:>2} {duration} {date}'.format(
+        user=get_user_name(r['user_id']),
+        score=r['score'],
+        date=r['date'].strftime('%d-%m-%Y'),
+        duration=str(r['duration']).split('.')[0],
+      ))
+
+if __name__ == '__main__':
+    print_high_scores()
+
