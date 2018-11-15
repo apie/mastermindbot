@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Mastermind{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        .important { color: #336699; }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="w3-container w3-teal">
+  <h1>{{ self.title() }}</h1>
+  <h5>Guess the code</h5>
+</div>
+
+<div class="w3-container">
+  <p><a href="https://t.me/amastermindbot">Play it</a></p>
+  <p><a href="https://github.com/apie/mastermindbot">Get the source</a></p>
+  
+  <ul class="w3-ul w3-card-4 w3-half">
+  <li><h3>High scores</h3></li>
+  {% for highscore in highscores %}
+    <li>{{highscore}}</li>
+  {% endfor %}
+</ul>
+</div>
+{% endblock %}
