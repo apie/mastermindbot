@@ -1,19 +1,24 @@
 # Setup
-Create venv in web folder and install the additional dependencies found in `setup/requirements.txt`.
-
-Adjust the path in `highscores_uwsgi.ini`. Now start the uwsgi server:
+Create venv in web folder and install the additional dependencies found in `web/setup/requirements.txt`:
 ```sh
-uwsgi --ini highscores_uwsgi.ini
+cd web
+virtualenv -p python3 venv
+source venv/bin/activate
+pip install -r setup/requirements.txt
 ```
-Monitor the log file for unusual things.
 
-Add proxy pass to Nginx:
+Now start the gunicorn server:
+```sh
+gunicorn highscores:app
+```
+
+Add proxy pass to Nginx `server` block:
 ```nginx
 location /mastermind { try_files $uri @mastermind; }
 location @mastermind {
-    include uwsgi_params;
-    uwsgi_pass unix:/FULL_PATH_TO_SOCKET_FILE;
-}  
+  include proxy_params;
+  proxy_pass http://localhost:8000;
+}
 ```
 
 

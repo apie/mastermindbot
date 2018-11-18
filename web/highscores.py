@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from flask import Flask
 from jinja2 import Environment, PackageLoader, select_autoescape
 
