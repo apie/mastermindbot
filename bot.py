@@ -52,7 +52,7 @@ def new_code(code_style):
 def start(bot, update):
   logmessage(bot, update)
   update.message.reply_text('''Deze bot kan mastermind met u spelen.
-De speler moet in tien beurten de code raden. De code bestaat uit een combinatie van 4 unieke kleuren harten. Er zijn 6 mogelijke kleuren.
+De speler moet in tien beurten de code raden. De code bestaat uit een combinatie van 4 unieke kleuren harten (of andere symbolen indien gewenst). Er zijn 6 mogelijke kleuren.
 Na het invoeren van vier harten heeft u uw beurt voltooid. De computer geeft nu aan hoeveel harten er zowel correct gevonden als geplaatst waren, en hoeveel er enkel correct gevonden waren.
 Na tien beurten is het spel afgelopen.
 Success! %s
@@ -60,6 +60,8 @@ Wilt u het potje halverwege afbreken? Geef dan /stoppen.
 Geef /highscore om de records te zien.
 Geef /code_style om de een ander type code in te stellen.
 Geef /begin om te beginnen.
+
+Zie ook: https://vps.stad.gr/mastermind
 ''' % emoji.emojize(':thumbsup:', use_aliases=True))
 
 def get_reply_markup(code_style):
@@ -83,9 +85,12 @@ def set_code_style(bot, update, user_data):
     update.message.reply_text(reply_text, reply_markup=reply_markup)
 
 def start_round(bot, update, user_data, query=None):
-    print('start_round')
     if user_data.get('user') is None:
       user_data['user'] = update.message.from_user
+    print('{user} start_round {rounds}'.format(
+      user=user_data.get('user').first_name if user_data.get('user') else '',
+      rounds=user_data.get('ronde', ''),
+    ))
     if not query:
       user_data['code'] = new_code(user_data.get('code_style'))
       print('Code:')
@@ -117,7 +122,10 @@ def check_for_another_game(bot, update, user_data, query):
 
 def make_guess(bot, update, user_data):
     bot.answer_callback_query(update.callback_query.id)
-    print('make_guess')
+    print('{user} make_guess round {rounds}'.format(
+      user=user_data.get('user').first_name if user_data.get('user') else '',
+      rounds=user_data.get('ronde', ''),
+    ))
     query = update.callback_query
     if query.data == 'stop':
       bot.edit_message_reply_markup(reply_markup=[],
