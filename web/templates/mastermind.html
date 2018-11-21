@@ -10,11 +10,11 @@
   <p><a href="https://t.me/amastermindbot">Play it</a></p>
   <p><a href="https://github.com/apie/mastermindbot">Get the source</a></p>
   
-  <ul class="w3-ul w3-card-4 w3-half">
-  <li><h3>High scores</h3></li>
+  <h3>High scores</h3>
+  <ol type="1" class="w3-ol w3-card-4 w3-half">
   {% for highscore in highscores %}
     <li>{{highscore}}</li>
   {% endfor %}
-</ul>
+  </ol>
 </div>
 {% endblock %}

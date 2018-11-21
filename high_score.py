@@ -73,6 +73,8 @@ def get_print_high_scores():
         date=r['date'].strftime('%d-%m-%Y'),
         duration=str(r['duration']).split('.')[0],
       ))
+      if len(scores) == 10:
+        break
     return scores
 
 def print_high_scores():
