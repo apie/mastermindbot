@@ -58,8 +58,8 @@ def get_high_scores(user_id):
             'score': r['score'],
         })
     return {
-    	'my_top': my_top,
-	'global_top': global_top,
+    	'my_top': my_top[:10],
+      'global_top': global_top[:10],
     }
 
 def get_print_high_scores():
