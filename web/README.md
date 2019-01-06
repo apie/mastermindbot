@@ -1,4 +1,4 @@
-# Setup
+# Web setup
 Create venv in web folder and install the additional dependencies found in `web/setup/requirements.txt`:
 ```sh
 cd web
