@@ -17,7 +17,8 @@ template = env.get_template('mastermind.html')
 
 @app.route("/mastermind")
 def mastermind():
-  return template.render(highscores=high_score.get_print_high_scores())
+  return template.render(
+    title='Mastermind', highscores=high_score.get_print_high_scores())
 
 
 if __name__ == "__main__":
