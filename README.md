@@ -1,4 +1,4 @@
 # mastermindbot
-Mastermind via telegram
+Play mastermind using Telegram
 
-Maak een bestand `settings.py` met daarin `API_KEY = 'key123'` Ze hierin de key van jouw bot. Start nu `bot.py`.
+Create a new file `settings.py` containing `API_KEY = 'key123'` Change it to the key of your bot. Now run `bot.py`.
