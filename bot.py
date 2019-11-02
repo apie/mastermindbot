@@ -55,7 +55,7 @@ def start(bot, update):
 De speler moet in tien beurten de code raden. De code bestaat uit een combinatie van 4 unieke kleuren harten (of andere symbolen indien gewenst). Er zijn 6 mogelijke kleuren.
 Na het invoeren van vier harten heeft u uw beurt voltooid. De computer geeft nu aan hoeveel harten er zowel correct gevonden als geplaatst waren, en hoeveel er enkel correct gevonden waren.
 Na tien beurten is het spel afgelopen.
-Success! %s
+Succes! %s
 Wilt u het potje halverwege afbreken? Geef dan /stoppen.
 Geef /highscore om de records te zien.
 Geef /code_style om de een ander type code in te stellen.
