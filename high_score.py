@@ -63,8 +63,8 @@ def get_print_high_scores():
         '{user} {score:02} {duration} {date}'.format(
             user=r['user'],
             score=r['score'],
-            date=r['date'].strftime('%d-%m-%Y'),
-            duration=str(r['duration']).split('.')[0],
+            date=r['date'],
+            duration=r['duration'],
         )
         for r in get_high_scores()['global_top']
     ]
