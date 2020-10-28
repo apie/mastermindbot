@@ -59,6 +59,7 @@ def get_high_scores(user_id=None):
     }
 
 def get_print_high_scores():
+  #TODO niet als str returnen maar als dict voor de website. voor printen ff via join() doen
     return [
         '{user} {score:02} {duration} {date}'.format(
             user=r['user'],
