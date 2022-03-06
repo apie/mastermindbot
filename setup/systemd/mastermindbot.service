@@ -1,0 +1,16 @@
+[Unit]
+Description=Mastermind bot
+After=syslog.target
+
+[Service]
+Type=simple
+User=telegram
+Group=telegram
+Environment=PYTHONUNBUFFERED=1
+WorkingDirectory=/home/telegram/telegram/bots/mastermindbot/
+ExecStart=/home/telegram/telegram/bots/mastermindbot/venv/bin/python bot.py
+Restart=always
+
+
+[Install]
+WantedBy=multi-user.target
