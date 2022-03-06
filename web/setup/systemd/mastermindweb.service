@@ -1,0 +1,17 @@
+[Unit]
+Description=Mastermind web
+After=syslog.target
+
+[Service]
+Type=simple
+User=telegram
+Group=telegram
+Environment=PYTHONUNBUFFERED=1
+WorkingDirectory=/home/telegram/telegram/bots/mastermindbot/web/
+ExecStart=/home/telegram/telegram/bots/mastermindbot/web/start.bash
+ExecReload=/usr/bin/pkill -HUP -f 'mastermindbot/web/venv/bin/gunicorn'
+Restart=always
+
+
+[Install]
+WantedBy=multi-user.target
