@@ -201,16 +201,6 @@ def make_guess(bot, update, user_data):
       query.message.reply_text(reply_text)
       show_high_scores(bot, update, query, user_data['user'])
       end_round(user_data)
-      nog_eens(bot, update, query)
-
-def nog_eens(bot, update, query):
-    reply_text = 'Nog een potje'
-    reply_text += emoji.emojize(':question:', use_aliases=True)
-
-    reply_keyboard = [[InlineKeyboardButton(o, callback_data=o) for o in ('Ja', 'Nee')]]
-    reply_markup = InlineKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-    if query:
-      query.message.reply_text(reply_text, reply_markup=reply_markup)
 
 def error(bot, update, error):
   logmessage(bot, update)

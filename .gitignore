@@ -103,3 +103,4 @@ ENV/
 settings.py
 
 *.db
+todo.txt
