@@ -1,4 +1,5 @@
 python-telegram-bot<12
-emoji
+emoji<1.7
 pydblite
+certifi>2022
 
